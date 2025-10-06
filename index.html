@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrbanStyle - Fashion & Accessories</title>
+  <link rel="stylesheet" href="style.css">
+  
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">UrbanStyle</div>
+        <div class="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#" data-page="home">Home</a></li>
+          <li><a href="#" data-page="products">Products</a></li>
+          <li><a href="#" data-page="contact">Contact</a></li>
+          <li>
+            <div class="cart-icon" id="cartIcon">
+              🛒
+              <span class="cart-count" id="cartCount">0</span>
+            </div>
+          </li>
+          <li>
+            <button class="dark-mode-toggle" id="darkModeToggle">🌙</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="mainContent"></main>
+
+  <div class="modal" id="productModal">
+    <div class="modal-content">
+      <button class="close-modal" id="closeModal">&times;</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 UrbanStyle. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const products = [
+      { id: 1, name: "Classic Denim Jacket", price: 79.99, category: "women", image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400", description: "Timeless denim jacket perfect for any season. Made with premium quality fabric." },
+      { id: 2, name: "Leather Crossbody Bag", price: 89.99, category: "accessories", image: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400", description: "Elegant leather crossbody bag with adjustable strap. Multiple compartments for organization." },
+      { id: 3, name: "Slim Fit Chinos", price: 59.99, category: "men", image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400", description: "Comfortable slim fit chinos available in multiple colors. Perfect for casual and semi-formal occasions." },
+      { id: 4, name: "Cotton Summer Dress", price: 69.99, category: "women", image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400", description: "Light and breezy cotton dress for summer days. Features beautiful floral patterns." },
+      { id: 5, name: "Designer Sunglasses", price: 129.99, category: "accessories", image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400", description: "UV protection designer sunglasses. Stylish and protective for your eyes." },
+      { id: 6, name: "Wool Blend Coat", price: 149.99, category: "men", image: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400", description: "Premium wool blend coat for cold weather. Classic design that never goes out of style." },
+      { id: 7, name: "Ankle Boots", price: 99.99, category: "women", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400", description: "Stylish ankle boots with comfortable sole. Perfect for autumn and winter." },
+      { id: 8, name: "Canvas Backpack", price: 49.99, category: "accessories", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400", description: "Durable canvas backpack with multiple pockets. Ideal for daily use and travel." },
+      { id: 9, name: "Casual Polo Shirt", price: 39.99, category: "men", image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400", description: "Classic polo shirt in various colors. Made from breathable cotton fabric." },
+      { id: 10, name: "Silk Scarf", price: 34.99, category: "accessories", image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400", description: "Luxurious silk scarf with elegant patterns. Versatile accessory for any outfit." },
+      { id: 11, name: "High-Waist Jeans", price: 79.99, category: "women", image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400", description: "Trendy high-waist jeans with perfect fit. Comfortable stretch denim." },
+      { id: 12, name: "Formal Oxford Shoes", price: 119.99, category: "men", image: "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400", description: "Premium leather oxford shoes. Essential for formal occasions and business wear." }
+    ];
+
+    let cart = [];
+    let currentPage = 'home';
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    function init() {
+      loadCart();
+      renderPage('home');
+      setupEventListeners();
+      updateCartCount();
+    }
+
+    function setupEventListeners() {
+      document.querySelectorAll('[data-page]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = e.target.dataset.page;
+          renderPage(page);
+          document.getElementById('navLinks').classList.remove('active');
+        });
+      });
+
+      document.getElementById('cartIcon').addEventListener('click', () => {
+        renderPage('cart');
+      });
+
+      document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+      document.getElementById('closeModal').addEventListener('click', closeModal);
+      document.getElementById('hamburger').addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('active');
+      });
+
+      document.getElementById('productModal').addEventListener('click', (e) => {
+        if (e.target.id === 'productModal') closeModal();
+      });
+    }
+
+    function renderPage(page) {
+      currentPage = page;
+      const mainContent = document.getElementById('mainContent');
+
+      switch(page) {
+        case 'home':
+          mainContent.innerHTML = renderHomePage();
+          break;
+        case 'products':
+          mainContent.innerHTML = renderProductsPage();
+          setupProductsPageListeners();
+          break;
+        case 'cart':
+          mainContent.innerHTML = renderCartPage();
+          setupCartPageListeners();
+          break;
+        case 'checkout':
+          mainContent.innerHTML = renderCheckoutPage();
+          setupCheckoutPageListeners();
+          break;
+        case 'contact':
+          mainContent.innerHTML = renderContactPage();
+          setupContactPageListeners();
+          break;
+      }
+    }
+
+    function renderHomePage() {
+      const featured = products.slice(0, 3);
+      return `
+        <section class="hero">
+          <div class="container">
+            <h1>Welcome to UrbanStyle</h1>
+            <p>Discover the latest trends in fashion and accessories</p>
+            <a href="#" class="btn" onclick="event.preventDefault(); renderPage('products')">Shop Now</a>
+          </div>
+        </section>
+        <section>
+          <div class="container">
+            <h2>Featured Products</h2>
+            <div class="products-grid">
+              ${featured.map(product => `
+                <div class="product-card" onclick="showProductDetails(${product.id})">
+                  <img src="${product.image}" alt="${product.name}" class="product-image">
+                  <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-price">R${product.price.toFixed(2)}</div>
+                    <button class="btn" onclick="event.stopPropagation(); addToCart(${product.id})">Add to Cart</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderProductsPage() {
+      return `
+        <section>
+          <div class="container">
+            <h2>All Products</h2>
+            <div class="search-filter">
+              <input type="text" id="searchInput" class="search-box" placeholder="Search products..." value="${searchQuery}">
+              <div class="filter-buttons">
+                <button class="filter-btn ${currentCategory === 'all' ? 'active' : ''}" data-category="all">All</button>
+                <button class="filter-btn ${currentCategory === 'men' ? 'active' : ''}" data-category="men">Men</button>
+                <button class="filter-btn ${currentCategory === 'women' ? 'active' : ''}" data-category="women">Women</button>
+                <button class="filter-btn ${currentCategory === 'accessories' ? 'active' : ''}" data-category="accessories">Accessories</button>
+                <select id="sortSelect" class="filter-btn">
+                  <option value="">Sort by</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="name">Name: A to Z</option>
+                </select>
+              </div>
+            </div>
+            <div class="products-grid" id="productsGrid">
+              ${renderFilteredProducts()}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderFilteredProducts() {
+      let filtered = products.filter(p => {
+        const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        return '<div class="empty-state"><h3>No products found</h3></div>';
+      }
+
+      return filtered.map(product => `
+        <div class="product-card" onclick="showProductDetails(${product.id})">
+          <img src="${product.image}" alt="${product.name}" class="product-image">
+          <div class="product-info">
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">$${product.price.toFixed(2)}</div>
+            <button class="btn" onclick="event.stopPropagation(); addToCart(${product.id})">Add to Cart</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function setupProductsPageListeners() {
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        document.getElementById('productsGrid').innerHTML = renderFilteredProducts();
+      });
+
+      document.querySelectorAll('.filter-btn[data-category]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          currentCategory = e.target.dataset.category;
+          document.querySelectorAll('.filter-btn[data-category]').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          document.getElementById('productsGrid').innerHTML = renderFilteredProducts();
+        });
+      });
+
+      document.getElementById('sortSelect').addEventListener('change', (e) => {
+        sortProducts(e.target.value);
+      });
+    }
+
+    function sortProducts(sortBy) {
+      if (sortBy === 'price-low') {
+        products.sort((a, b) => a.price - b.price);
+      } else if (sortBy === 'price-high') {
+        products.sort((a, b) => b.price - a.price);
+      } else if (sortBy === 'name') {
+        products.sort((a, b) => a.name.localeCompare(b.name));
+      }
+      document.getElementById('productsGrid').innerHTML = renderFilteredProducts();
+    }
+
+    function showProductDetails(productId) {
+      const product = products.find(p => p.id === productId);
+      document.getElementById('modalContent').innerHTML = `
+        <img src="${product.image}" alt="${product.name}" style="width: 100%; border-radius: 10px; margin-bottom: 1rem;">
+        <h2>${product.name}</h2>
+        <p style="font-size: 1.5rem; color: var(--secondary); font-weight: bold; margin: 1rem 0;">R${product.price.toFixed(2)}</p>
+        <p style="margin-bottom: 1rem;">${product.description}</p>
+        <p style="margin-bottom: 1rem;"><strong>Category:</strong> ${product.category.charAt(0).toUpperCase() + product.category.slice(1)}</p>
+        <button class="btn" onclick="addToCart(${product.id}); closeModal()">Add to Cart</button>
+      `;
+      document.getElementById('productModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('productModal').classList.remove('active');
+    }
+
+    function renderCartPage() {
+      if (cart.length === 0) {
+        return `
+          <section>
+            <div class="container">
+              <div class="empty-state">
+                <h2>Your cart is empty</h2>
+                <p>Add some products to get started!</p>
+                <button class="btn" onclick="renderPage('products')">Shop Now</button>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      return `
+        <section>
+          <div class="container">
+            <h2>Shopping Cart</h2>
+            <table class="cart-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${cart.map(item => `
+                  <tr>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 1rem;">
+                        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                        <span>${item.name}</span>
+                      </div>
+                    </td>
+                    <td>R${item.price.toFixed(2)}</td>
+                    <td>
+                      <div class="quantity-control">
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
+                        <input type="number" class="quantity-input" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)">
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
+                      </div>
+                    </td>
+                    <td>R${(item.price * item.quantity).toFixed(2)}</td>
+                    <td>
+                      <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="cart-summary">
+              <h3>Order Summary</h3>
+              <div style="display: flex; justify-content: space-between; margin: 1rem 0; font-size: 1.2rem;">
+                <span>Subtotal:</span>
+                <span>R${total.toFixed(2)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin: 1rem 0; font-size: 1.2rem;">
+                <span>Shipping:</span>
+                <span>Free</span>
+              </div>
+              <hr style="margin: 1rem 0;">
+              <div style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: bold;">
+                <span>Total:</span>
+                <span style="color: var(--secondary);">R${total.toFixed(2)}</span>
+              </div>
+              <button class="btn" style="width: 100%; margin-top: 1rem;" onclick="renderPage('checkout')">Proceed to Checkout</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function setupCartPageListeners() {
+      // Listeners are inline for simplicity in this implementation
+    }
+
+    function renderCheckoutPage() {
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      return `
+        <section>
+          <div class="container">
+            <h2>Checkout</h2>
+            <div class="checkout-form">
+              <form id="checkoutForm">
+                <div class="form-group">
+                  <label for="fullName">Full Name *</label>
+                  <input type="text" id="fullName" name="fullName" required>
+                  <div class="error-message" id="fullNameError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="email">Email Address *</label>
+                  <input type="email" id="email" name="email" required>
+                  <div class="error-message" id="emailError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="phone">Phone Number *</label>
+                  <input type="tel" id="phone" name="phone" required>
+                  <div class="error-message" id="phoneError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="address">Address *</label>
+                  <textarea id="address" name="address" rows="3" required></textarea>
+                  <div class="error-message" id="addressError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="city">City *</label>
+                  <input type="text" id="city" name="city" required>
+                  <div class="error-message" id="cityError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="zipCode">Zip Code *</label>
+                  <input type="text" id="zipCode" name="zipCode" required>
+                  <div class="error-message" id="zipCodeError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="paymentMethod">Payment Method *</label>
+                  <select id="paymentMethod" name="paymentMethod" required>
+                    <option value="">Select Payment Method</option>
+                    <option value="credit">Credit Card</option>
+                    <option value="debit">Debit Card</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cod">Cash on Delivery</option>
+                  </select>
+                  <div class="error-message" id="paymentMethodError"></div>
+                </div>
+                <div style="background: var(--bg); padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+                  <h4>Order Total: <span style="color: var(--secondary);">${total.toFixed(2)}</span></h4>
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Place Order</button>
+              </form>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function setupCheckoutPageListeners() {
+      document.getElementById('checkoutForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (validateCheckoutForm()) {
+          completeOrder();
+        }
+      });
+    }
+
+    function validateCheckoutForm() {
+      let isValid = true;
+      const fields = ['fullName', 'email', 'phone', 'address', 'city', 'zipCode', 'paymentMethod'];
+
+      fields.forEach(field => {
+        const input = document.getElementById(field);
+        const error = document.getElementById(field + 'Error');
+        
+        if (!input.value.trim()) {
+          input.classList.add('error');
+          error.textContent = 'This field is required';
+          isValid = false;
+        } else {
+          input.classList.remove('error');
+          error.textContent = '';
+
+          if (field === 'email' && !isValidEmail(input.value)) {
+            input.classList.add('error');
+            error.textContent = 'Please enter a valid email address';
+            isValid = false;
+          }
+
+          if (field === 'phone' && !isValidPhone(input.value)) {
+            input.classList.add('error');
+            error.textContent = 'Please enter a valid phone number';
+            isValid = false;
+          }
+
+          if (field === 'zipCode' && !isValidZipCode(input.value)) {
+            input.classList.add('error');
+            error.textContent = 'Please enter a valid zip code';
+            isValid = false;
+          }
+        }
+      });
+
+      return isValid;
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function isValidPhone(phone) {
+      return /^[\d\s\-\+\(\)]{10,}$/.test(phone);
+    }
+
+    function isValidZipCode(zip) {
+      return /^\d{4,6}$/.test(zip);
+    }
+
+    function completeOrder() {
+      const orderNumber = Math.floor(100000 + Math.random() * 900000);
+      cart = [];
+      saveCart();
+      updateCartCount();
+      
+      document.getElementById('mainContent').innerHTML = `
+        <section>
+          <div class="container">
+            <div style="text-align: center; padding: 3rem;">
+              <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+              <h2 style="color: var(--success);">Order Placed Successfully!</h2>
+              <p style="font-size: 1.2rem; margin: 1rem 0;">Thank you for your purchase!</p>
+              <p>Order Number: <strong>#${orderNumber}</strong></p>
+              <p style="margin: 2rem 0;">You will receive a confirmation email shortly.</p>
+              <button class="btn" onclick="renderPage('products')">Continue Shopping</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderContactPage() {
+      return `
+        <section>
+          <div class="container">
+            <h2>Contact Us</h2>
+            <div class="contact-info">
+              <h3>Get in Touch</h3>
+              <p><strong>Address:</strong> 123 Fashion Street, Style City, SC 12345</p>
+              <p><strong>Phone:</strong> +1 (555) 123-4567</p>
+              <p><strong>Email:</strong> info@urbanstyle.com</p>
+              <p><strong>Hours:</strong> Monday - Saturday: 9:00 AM - 8:00 PM</p>
+            </div>
+            <div class="checkout-form">
+              <h3>Send us a Message</h3>
+              <form id="contactForm">
+                <div class="form-group">
+                  <label for="contactName">Name *</label>
+                  <input type="text" id="contactName" required>
+                  <div class="error-message" id="contactNameError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="contactEmail">Email *</label>
+                  <input type="email" id="contactEmail" required>
+                  <div class="error-message" id="contactEmailError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="contactSubject">Subject *</label>
+                  <input type="text" id="contactSubject" required>
+                  <div class="error-message" id="contactSubjectError"></div>
+                </div>
+                <div class="form-group">
+                  <label for="contactMessage">Message *</label>
+                  <textarea id="contactMessage" rows="5" required></textarea>
+                  <div class="error-message" id="contactMessageError"></div>
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Send Message</button>
+              </form>
+              <div id="contactSuccess" style="display: none;"></div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function setupContactPageListeners() {
+      document.getElementById('contactForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (validateContactForm()) {
+          document.getElementById('contactSuccess').innerHTML = '<div class="success-message">Thank you for your message! We will get back to you soon.</div>';
+          document.getElementById('contactSuccess').style.display = 'block';
+          document.getElementById('contactForm').reset();
+          setTimeout(() => {
+            document.getElementById('contactSuccess').style.display = 'none';
+          }, 5000);
+        }
+      });
+    }
+
+    function validateContactForm() {
+      let isValid = true;
+      const fields = ['contactName', 'contactEmail', 'contactSubject', 'contactMessage'];
+
+      fields.forEach(field => {
+        const input = document.getElementById(field);
+        const error = document.getElementById(field + 'Error');
+        
+        if (!input.value.trim()) {
+          input.classList.add('error');
+          error.textContent = 'This field is required';
+          isValid = false;
+        } else {
+          input.classList.remove('error');
+          error.textContent = '';
+
+          if (field === 'contactEmail' && !isValidEmail(input.value)) {
+            input.classList.add('error');
+            error.textContent = 'Please enter a valid email address';
+            isValid = false;
+          }
+        }
+      });
+
+      return isValid;
+    }
+
+    function addToCart(productId) {
+      const product = products.find(p => p.id === productId);
+      const existingItem = cart.find(item => item.id === productId);
+
+      if (existingItem) {
+        existingItem.quantity++;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+
+      saveCart();
+      updateCartCount();
+      showNotification('Product added to cart!');
+    }
+
+    function updateQuantity(productId, newQuantity) {
+      newQuantity = parseInt(newQuantity);
+      if (newQuantity < 1) {
+        removeFromCart(productId);
+        return;
+      }
+
+      const item = cart.find(item => item.id === productId);
+      if (item) {
+        item.quantity = newQuantity;
+        saveCart();
+        renderPage('cart');
+      }
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.id !== productId);
+      saveCart();
+      updateCartCount();
+      renderPage('cart');
+    }
+
+    function updateCartCount() {
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('cartCount').textContent = count;
+    }
+
+    function saveCart() {
+      try {
+        const cartData = JSON.stringify(cart);
+        document.cookie = `cart=${cartData}; path=/; max-age=604800`;
+      } catch (e) {
+        console.error('Error saving cart:', e);
+      }
+    }
+
+    function loadCart() {
+      try {
+        const cookies = document.cookie.split(';');
+        const cartCookie = cookies.find(c => c.trim().startsWith('cart='));
+        if (cartCookie) {
+          const cartData = cartCookie.split('=')[1];
+          cart = JSON.parse(decodeURIComponent(cartData));
+        }
+      } catch (e) {
+        console.error('Error loading cart:', e);
+        cart = [];
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      document.getElementById('darkModeToggle').textContent = isDark ? '☀️' : '🌙';
+      try {
+        document.cookie = `darkMode=${isDark}; path=/; max-age=31536000`;
+      } catch (e) {
+        console.error('Error saving dark mode preference:', e);
+      }
+    }
+
+    function loadDarkMode() {
+      try {
+        const cookies = document.cookie.split(';');
+        const darkModeCookie = cookies.find(c => c.trim().startsWith('darkMode='));
+        if (darkModeCookie && darkModeCookie.includes('true')) {
+          document.body.classList.add('dark-mode');
+          document.getElementById('darkModeToggle').textContent = '☀️';
+        }
+      } catch (e) {
+        console.error('Error loading dark mode preference:', e);
+      }
+    }
+
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'success-message';
+      notification.textContent = message;
+      notification.style.position = 'fixed';
+      notification.style.top = '100px';
+      notification.style.right = '20px';
+      notification.style.zIndex = '1000';
+      notification.style.minWidth = '250px';
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    loadDarkMode();
+    init();
+  </script>
+</body>
+</html>
